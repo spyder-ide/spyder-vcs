@@ -23,12 +23,12 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QMessageBox,
     QSizePolicy,
-    QVBoxLayout
+    QVBoxLayout,
 )
 
 # Local imports
 from spyder.api.plugins import Plugins
-from spyder.api.widgets import PluginMainWidget
+from spyder.api.widgets.main_widget import PluginMainWidget
 from spyder.api.translations import get_translation
 
 from .auth import CreateDialog, CommitComponent, RemoteComponent
@@ -39,7 +39,7 @@ from .changes import ChangesComponent
 from .history import CommitHistoryComponent
 from ..backend.errors import VCSBackendFail
 
-_ = get_translation('spyder')
+_ = get_translation("spyder")
 
 
 class VCSWidget(PluginMainWidget):
@@ -82,9 +82,8 @@ class VCSWidget(PluginMainWidget):
         toolbar = QHBoxLayout()
         self.branch_list = BranchesComponent(manager, parent=self)
         self.branch_list.setSizePolicy(
-            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred))
-
-        refresh_button = action2button(plugin.refresh_action, parent=self)
+            QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        )
 
         self.changes = ChangesComponent(
             manager,
@@ -133,11 +132,13 @@ class VCSWidget(PluginMainWidget):
         rootlayout.addWidget(self.changes)
         rootlayout.addWidget(self.unstaged_changes)
         rootlayout.addWidget(self.staged_changes)
-        self.components.extend((
-            self.changes,
-            self.unstaged_changes,
-            self.staged_changes,
-        ))
+        self.components.extend(
+            (
+                self.changes,
+                self.unstaged_changes,
+                self.staged_changes,
+            )
+        )
 
         rootlayout.addWidget(self.commit)
         self.components.append(self.commit)
@@ -162,15 +163,15 @@ class VCSWidget(PluginMainWidget):
         self.branch_list.sig_branch_changed.connect(self.refresh_all)
         self.branch_list.sig_branch_changed.connect(plugin.sig_branch_changed)
 
-        self.unstaged_changes.changes_tree.sig_stage_toggled.connect(
-            self._post_stage)
-        self.unstaged_changes.changes_tree.sig_stage_toggled[
-            bool, str].connect(self._post_stage)
+        self.unstaged_changes.changes_tree.sig_stage_toggled.connect(self._post_stage)
+        self.unstaged_changes.changes_tree.sig_stage_toggled[bool, str].connect(
+            self._post_stage
+        )
 
-        self.staged_changes.changes_tree.sig_stage_toggled.connect(
-            self._post_stage)
+        self.staged_changes.changes_tree.sig_stage_toggled.connect(self._post_stage)
         self.staged_changes.changes_tree.sig_stage_toggled[bool, str].connect(
-            self._post_stage)
+            self._post_stage
+        )
 
         self.commit.sig_auth_operation_success.connect(self.history.refresh)
         self.commit.sig_auth_operation_success.connect(self.remote.refresh)
@@ -179,7 +180,8 @@ class VCSWidget(PluginMainWidget):
         self.history.sig_last_commit.connect(self.remote.refresh)
 
         self.repo_not_found.create_dialog.sig_repository_ready.connect(
-            plugin.set_repository)
+            plugin.set_repository
+        )
 
         plugin.sig_repository_changed.connect(self.setup_repo)
         plugin.refresh_action.triggered.connect(self.refresh_all)
@@ -187,11 +189,15 @@ class VCSWidget(PluginMainWidget):
         # Toolbar
         toolbar = self.get_main_toolbar()
         toolbar.addWidget(self.branch_list)
-        self.add_item_to_toolbar(
-            refresh_button,
-            toolbar=toolbar,
-            section="main_section",
-        )
+        refresh_button = action2button(plugin.refresh_action, parent=toolbar)
+        toolbar.addWidget(refresh_button)
+
+        # TODO: Fix the toolbar API usage.
+        # self.add_item_to_toolbar(
+        #     refresh_button,
+        #     toolbar=toolbar,
+        #     section="main_section",
+        # )
 
         # Extra setup
         self.repo_not_found.hide()
@@ -211,7 +217,8 @@ class VCSWidget(PluginMainWidget):
         if plugin.get_repository() is None:
             if getattr(plugin, "create_vcs_action", None) is not None:
                 project_path = plugin.get_plugin(
-                    Plugins.Projects).get_active_project_path()
+                    Plugins.Projects
+                ).get_active_project_path()
 
                 # Show No repository available only if there is an active project
                 if project_path:
@@ -266,9 +273,10 @@ class VCSWidget(PluginMainWidget):
                     # Prevent show the error if the backend is buggy and
                     # the repository is not really broken
                     QMessageBox.critical(
-                        self, _("Broken repository"),
-                        _("The repository is broken and cannot be used anymore."
-                          ))
+                        self,
+                        _("Broken repository"),
+                        _("The repository is broken and cannot be used anymore."),
+                    )
                     return
 
         # TODO: use issue reporter
@@ -301,13 +309,17 @@ class VCSWidget(PluginMainWidget):
     def _post_undo(self, commit: dict) -> None:
         """Update commit message."""
         if not self.commit.commit_message.toPlainText():
-            text = (commit.get("content") or commit.get("description")
-                    or commit.get("title", ""))
+            text = (
+                commit.get("content")
+                or commit.get("description")
+                or commit.get("title", "")
+            )
             self.commit.commit_message.setPlainText(text)
 
 
 class RepoNotFoundComponent(BaseComponent, QWidget):
     """A widget to show when no repository is found."""
+
     def __init__(self, *args, create_vcs_action: QAction, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -324,7 +336,8 @@ class RepoNotFoundComponent(BaseComponent, QWidget):
         self.no_repo_found_label.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         self.create_button.setStyleSheet("background-color: #1122cc;")
         self.create_button.setSizePolicy(
-            QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred))
+            QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        )
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
@@ -335,11 +348,13 @@ class RepoNotFoundComponent(BaseComponent, QWidget):
         # Slots
         self.create_button.triggered.connect(self.show_create_dialog)
         self.create_dialog.rejected.connect(
-            partial(self.create_button.setEnabled, True))
+            partial(self.create_button.setEnabled, True)
+        )
 
     def setup(self, project_path: str):
         self.no_repo_found_label.setText(
-            _("<h3>No repository available</h3>\nin ") + str(project_path))
+            _("<h3>No repository available</h3>\nin ") + str(project_path)
+        )
 
         self.create_dialog.setup(project_path)
         self.create_button.setEnabled(bool(self.manager.create_vcs_types))
