@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
-# Copyright (c) 2009- Spyder Project Contributors
+# Copyright (c) 2022- Spyder Project Contributors
 #
 # Distributed under the terms of the MIT License
 # (see spyder/__init__.py for details)
@@ -19,7 +19,7 @@ from qtpy.QtCore import Slot, Signal
 # Local imports
 from spyder.api.translations import get_translation
 from spyder.api.plugins import Plugins, SpyderDockablePlugin
-from spyder.config.manager import CONF
+# from spyder.config.manager import CONF
 from spyder.utils import icon_manager as ima
 
 from .backend.api import VCSBackendManager
@@ -36,7 +36,7 @@ class VCS(SpyderDockablePlugin):  # pylint: disable=W0201
     VCS plugin.
     """
 
-    NAME = "VCS"
+    NAME = "vcs"
     REQUIRES = [Plugins.Projects]
     OPTIONAL = [Plugins.Shortcuts, Plugins.MainMenu]
     TABIFY = [Plugins.Help]
@@ -94,12 +94,11 @@ class VCS(SpyderDockablePlugin):  # pylint: disable=W0201
 
     def __init__(self, *args, **kwargs):
         self.vcs_manager = VCSBackendManager(None)
-        # workaround when imported as 3rd party plugin
-        kwargs.setdefault("configuration", CONF)
         super().__init__(*args, **kwargs)
 
     # Reimplemented APIs
-    def get_name(self):
+    @staticmethod
+    def get_name():
         return _("VCS")
 
     def get_description(self):
@@ -109,7 +108,7 @@ class VCS(SpyderDockablePlugin):  # pylint: disable=W0201
         # return self.create_icon("code_fork")
         return qta.icon("mdi.source-branch")
 
-    def register(self):
+    def on_initialize(self):
         # Register backends
         self.vcs_manager.register_backend(GitBackend)
 
@@ -211,13 +210,14 @@ class VCS(SpyderDockablePlugin):  # pylint: disable=W0201
                 shortcuts.register_shortcut(
                     action, self.NAME, action_name, plugin_name=self.NAME
                 )
-        if mainmenu:
-            appmenu = mainmenu.create_application_menu(
-                self.NAME + "_menu",
-                _("&VCS"),
-            )
-            for action in self.get_actions().values():
-                mainmenu.add_item_to_application_menu(action, menu=appmenu)
+        # TODO: Fix the main menu API usage.
+        # if mainmenu:
+        #     appmenu = mainmenu.create_application_menu(
+        #         self.NAME + "_menu",
+        #         _("&VCS"),
+        #     )
+        #     for action in self.get_actions().values():
+        #         mainmenu.add_item_to_application_menu(action)
 
     # Public API
     def get_repository(self) -> Optional[str]:
@@ -304,11 +304,6 @@ class VCS(SpyderDockablePlugin):  # pylint: disable=W0201
         branch_list.select(branchname)
 
         self.get_widget().select_branch(branchname)
-
-    # workarounds when imported as 3rd party plugin
-    register_plugin = register
-
-    DESCRIPTION = get_description(None)
 
     @property
     def dockwidget(self):
