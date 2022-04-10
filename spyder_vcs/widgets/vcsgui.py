@@ -42,6 +42,11 @@ from ..backend.errors import VCSBackendFail
 _ = get_translation("spyder")
 
 
+class VCSToolbar:
+    main_section = "main_section"
+    branch_combo = "branch_combo"
+
+
 class VCSWidget(PluginMainWidget):
     """VCS main widget."""
 
@@ -84,6 +89,7 @@ class VCSWidget(PluginMainWidget):
         self.branch_list.setSizePolicy(
             QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         )
+        self.branch_list.ID = VCSToolbar.branch_combo
 
         self.changes = ChangesComponent(
             manager,
@@ -188,16 +194,17 @@ class VCSWidget(PluginMainWidget):
 
         # Toolbar
         toolbar = self.get_main_toolbar()
+        # HACK: Add the widget directly instead of pass it to add_item_to_toolbar
+        #       because using that doesn't work.
         toolbar.addWidget(self.branch_list)
-        refresh_button = action2button(plugin.refresh_action, parent=toolbar)
-        toolbar.addWidget(refresh_button)
 
-        # TODO: Fix the toolbar API usage.
-        # self.add_item_to_toolbar(
-        #     refresh_button,
-        #     toolbar=toolbar,
-        #     section="main_section",
-        # )
+        # BUG: This causes the 3 dots to appear to the refresh action.
+        for item in [plugin.refresh_action]:
+            self.add_item_to_toolbar(
+                item,
+                toolbar=toolbar,
+                section=VCSToolbar.main_section,
+            )
 
         # Extra setup
         self.repo_not_found.hide()
