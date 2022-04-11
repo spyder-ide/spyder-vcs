@@ -210,14 +210,15 @@ class VCS(SpyderDockablePlugin):  # pylint: disable=W0201
                 shortcuts.register_shortcut(
                     action, self.NAME, action_name, plugin_name=self.NAME
                 )
-        # TODO: Fix the main menu API usage.
-        # if mainmenu:
-        #     appmenu = mainmenu.create_application_menu(
-        #         self.NAME + "_menu",
-        #         _("&VCS"),
-        #     )
-        #     for action in self.get_actions().values():
-        #         mainmenu.add_item_to_application_menu(action)
+
+        if mainmenu:
+            menu_id = self.NAME + "_menu"
+            mainmenu.create_application_menu(
+                menu_id,
+                _("&VCS"),
+            )
+            for action in self.get_actions().values():
+                mainmenu.add_item_to_application_menu(action, menu_id=menu_id)
 
     # Public API
     def get_repository(self) -> Optional[str]:
